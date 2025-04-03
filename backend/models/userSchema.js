@@ -71,8 +71,8 @@
 // userSchema.js
 
 import mongoose from "mongoose";
- import bcrypt from "bcrypt";
- import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 const userSchema = new mongoose.Schema({
   // Your schema definition here...
@@ -154,6 +154,16 @@ userSchema.pre("save", async function (next) {
   }
 });
 
+userSchema.methods.comparePassword = async function (enterPassword) {
+  return await bcrypt.compare(enterPassword, this.password)
+}
+
+
+userSchema.methods.generateJsonWebToken = async function () {
+  return jwt.sign({id : this.id},process.env.JWT_SECRET_KEY,{
+    expiresIn : process.env.JWT_EXPIRE
+  })
+}
 
 const User = mongoose.model("User", userSchema);
 

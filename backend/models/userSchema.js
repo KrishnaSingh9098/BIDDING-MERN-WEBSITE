@@ -116,7 +116,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["Auctioneer", "Bider", "Super Admin"],
+    enum: ["Auctioneer", "Bidder", "Super Admin"],
   },
   unpaidCommission: {
     type: Number,

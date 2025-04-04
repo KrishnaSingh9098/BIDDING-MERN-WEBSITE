@@ -45,6 +45,7 @@ app.use(
 // Define Routes
 app.use("/api/v1/user", userRouter);
 
+
 // Connect to Database
 connection();
 

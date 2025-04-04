@@ -11,6 +11,8 @@ import fileUpload from "express-fileupload";
 import { connection } from "./DATABASE/connetion.js";
 import { errorMiddleWare } from "./middlewares/error.js";
 import userRouter from "./routes/userRoutes.js";
+// import { addNewAuctionItem } from "./controllers/auctionItemController.js";
+import router from "./routes/auctionItemRoute.js";
 
 const app = express();
 
@@ -44,7 +46,7 @@ app.use(
 
 // Define Routes
 app.use("/api/v1/user", userRouter);
-
+app.use("/api/v1/auctionitem", router);
 
 // Connect to Database
 connection();

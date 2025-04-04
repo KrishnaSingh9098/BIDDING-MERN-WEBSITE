@@ -96,6 +96,7 @@
   import { catchAsyncErrors } from "../middlewares/cacheAsyncError.js";
   import { v2 as cloudinary } from "cloudinary";
   import errorHandler from "../middlewares/error.js";
+import mongoose from "mongoose";
   export const addNewAuctionItem = catchAsyncErrors(async (req, res, next) => {
     if (!req.files || Object.keys(req.files).length === 0) {
       return next(new errorHandler("Profile Image Required", 400));
@@ -199,4 +200,37 @@
       return next(new errorHandler(error.message || "Failed to create auction.", 500));
     }
   });
+  
+
+
+  export const getAllItems = catchAsyncErrors(async (req, res, next) => {
+    try {
+      // Fetch all items from the database
+      let items = await Auction.find();
+  
+      // Send the response with the fetched items
+      res.status(200).json({
+        success: true,
+        items,
+      });
+    } catch (error) {
+      next(error); // Pass any error to the error-handling middleware
+    }
+  });
+  
+  export const getMyAuctionItems  = catchAsyncErrors(async (req,res,next)=>{
+    const {id} = req.paramsid
+    if(!mongoose.Types.ObjectId.isValid(id)){
+      return next(new errorHandler("Invalid Id Format.",400))
+    }
+    const auctionItem = await Auction.findById({id})
+    if(!auctionItem){
+      return next(new errorHandler("Auction Not Found.",404))
+    }
+  })
+  export const getAuctionDetail  = catchAsyncErrors(async (req,res,next)=>{
+
+  })
+  export const removeFromAuction  = catchAsyncErrors(async (req,res,next)=>{})
+  export const republishItem  = catchAsyncErrors(async (req,res,next)=>{})
   

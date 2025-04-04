@@ -33,7 +33,6 @@
 //     }
 // });
 
-
 // import jwt from 'jsonwebtoken';
 // import User from "../models/userSchema.js";
 // import { catchAsyncErrors } from "./cacheAsyncError.js";
@@ -52,7 +51,7 @@
 //     try {
 //         // Verify the token
 //         const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-        
+
 //         // Log the decoded token for debugging
 //         console.log('Decoded token:', decoded); // Debugging
 
@@ -81,48 +80,65 @@
 // });
 
 // auth.js (Middleware)
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 import User from "../models/userSchema.js";
 import { catchAsyncErrors } from "./cacheAsyncError.js";
 import errorHandler from "./error.js";
 
 export const isAuthenticated = catchAsyncErrors(async (req, res, next) => {
-    // Get the token from cookies
-    const token = req.cookies.token;
-    console.log("Token received from cookies:", token);
+  // Get the token from cookies
+  const token = req.cookies.token;
+  console.log("Token received from cookies:", token);
 
-    // If no token is found, return an error
-    if (!token) {
-        return next(new errorHandler("User not authenticated.", 401));  // 401 is appropriate for authentication errors
+  // If no token is found, return an error
+  if (!token) {
+    return next(new errorHandler("User not authenticated.", 401)); // 401 is appropriate for authentication errors
+  }
+
+  try {
+    // Verify the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+    // Log the decoded token for debugging
+    console.log("Decoded token:", decoded); // Debugging
+
+    // Attach the decoded user data to the request object (use req.user here)
+    req.user = await User.findById(decoded.userId); // Updated: use req.user instead of req.User
+
+    // Log user object for debugging
+    console.log("User found:", req.user); // Debugging
+
+    // If no user is found
+    if (!req.user) {
+      return next(new errorHandler("User not found.", 401));
     }
 
-    try {
-        // Verify the token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-        
-        // Log the decoded token for debugging
-        console.log('Decoded token:', decoded); // Debugging
-
-        // Attach the decoded user data to the request object (use req.user here)
-        req.user = await User.findById(decoded.userId);  // Updated: use req.user instead of req.User
-
-        // Log user object for debugging
-        console.log('User found:', req.user); // Debugging
-
-        // If no user is found
-        if (!req.user) {
-            return next(new errorHandler("User not found.", 401));
-        }
-
-        // Call next() to pass the request to the next middleware or route handler
-        next();
-    } catch (err) {
-        // Handle token expiration error explicitly
-        if (err.name === 'TokenExpiredError') {
-            return next(new errorHandler("Token has expired.", 401));
-        }
-
-        console.error("Error verifying token:", err);
-        return next(new errorHandler("User not authenticated.", 401));
+    // Call next() to pass the request to the next middleware or route handler
+    next();
+  } catch (err) {
+    // Handle token expiration error explicitly
+    if (err.name === "TokenExpiredError") {
+      return next(new errorHandler("Token has expired.", 401));
     }
+
+    console.error("Error verifying token:", err);
+    return next(new errorHandler("User not authenticated.", 401));
+  }
 });
+
+export const isAuthorized = (...roles) => {
+    return (req, res, next) => {
+      console.log("User role:", req.user ? req.user.role : "User not authenticated");
+      console.log("Allowed roles:", roles);
+
+      if (!req.user || !req.user.role || !roles.includes(req.user.role)) {
+        return next(
+          new errorHandler(
+            `${req.user ? req.user.role : 'Unknown user'} not allowed to access this resource`,
+            403
+          )
+        );
+      }
+      next();
+    };
+};

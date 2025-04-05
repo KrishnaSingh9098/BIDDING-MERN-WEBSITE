@@ -219,18 +219,97 @@ import mongoose from "mongoose";
   });
   
   export const getMyAuctionItems  = catchAsyncErrors(async (req,res,next)=>{
-    const {id} = req.paramsid
-    if(!mongoose.Types.ObjectId.isValid(id)){
-      return next(new errorHandler("Invalid Id Format.",400))
-    }
-    const auctionItem = await Auction.findById({id})
-    if(!auctionItem){
-      return next(new errorHandler("Auction Not Found.",404))
-    }
-  })
-  export const getAuctionDetail  = catchAsyncErrors(async (req,res,next)=>{
+   
+   const items = await Auction.find({createdBy :req.user._id })
+   res.status(200).json({
+    success: true,
+   items,
+   
+});
 
+console.log(getMyAuctionItems)
   })
-  export const removeFromAuction  = catchAsyncErrors(async (req,res,next)=>{})
-  export const republishItem  = catchAsyncErrors(async (req,res,next)=>{})
+  export const getAuctionDetail = catchAsyncErrors(async (req, res, next) => {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return next(new errorHandler("Invalid Id Format.", 400));
+    }
+    const auctionItem = await Auction.findById(id);
+    if (!auctionItem) {
+        return next(new errorHandler("Auction Not Found.", 404));
+    }
+    const bidders = auctionItem.bids.sort((a, b) => b.bid - a.bid);
+    res.status(200).json({
+        success: true,
+        auctionItem,
+        bidders
+    });
+});
+
+  export const removeFromAuction  = catchAsyncErrors(async (req,res,next)=>{
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return next(new errorHandler("Invalid Id Format.", 400));
+    }
+    const auctionItem = await Auction.findById(id);
+    if (!auctionItem) {
+        return next(new errorHandler("Auction Not Found.", 404));
+    }
+    await auctionItem.deleteOne();
+    res.status(200).json({
+      success: true,
+     message : "Auction Item deleted successFully."
+     
+  });
+  })
+  export const republishItem  = catchAsyncErrors(async (req,res,next)=>{
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return next(new errorHandler("Invalid Id Format.", 400));
+    }
+    let auctionItem = await Auction.findById(id);
+    if (!auctionItem) {
+        return next(new errorHandler("Auction Not Found.", 404));
+    }
+    if(!req.body.startTime || !req.body.endTime ){
+      return next(new errorHandler("StartTime And Endtime ifor republish is mandatory",400))
+    }
+    if(new Date(auctionItem.endTime )> Date.now()){
+      return next(new errorHandler("Auction is Already active or Not Republish",400))
+    }
+
+    let data = {
+      startTime : new Date(req.body.startTime),
+      endTime : new Date(req.body.endTime)
+    }
+    if(data.startTime < Date.now()){
+      return next(new errorHandler("Auction Startimg Tie MMust Be Greater Than Present Time",400))
+    }
+
+    if(data.startTime >= data.endTime){
+      return next(new errorHandler("Auction Startimg Tie Must Be Greater Than Less Time",400))
+    }
+
+    data.bids = []
+    data.commissionCalculated = false
+    
+    auctionItem = await Auction.findByIdAndUpdate(id,Date,{
+      new : true,
+      runValidators :true,
+      useFindAndModify : false
+
+    })
+
+    const createdBy = await User.findByIdAndUpdate(req.user._id,{unpaidCommission : 0},{
+      new : true,
+      runValidators : false,
+      useFindAndModify : false,
+    })
+    res.status(200).json({
+      success : true,
+      auctionItem,
+      message:`Auction republished and will be active on ${req.body.startTime}`,
+      createdBy
+    })
+  })
   

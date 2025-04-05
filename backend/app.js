@@ -13,6 +13,7 @@ import { errorMiddleWare } from "./middlewares/error.js";
 import userRouter from "./routes/userRoutes.js";
 // import { addNewAuctionItem } from "./controllers/auctionItemController.js";
 import router from "./routes/auctionItemRoute.js";
+import bidRouter from "./routes/bidRoutes.js";
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use(
 // Define Routes
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/auctionitem", router);
+app.use("/api/v1/bid", bidRouter);
 
 // Connect to Database
 connection();

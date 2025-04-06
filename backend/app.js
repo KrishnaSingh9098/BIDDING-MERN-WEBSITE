@@ -14,7 +14,10 @@ import userRouter from "./routes/userRoutes.js";
 // import { addNewAuctionItem } from "./controllers/auctionItemController.js";
 import router from "./routes/auctionItemRoute.js";
 import bidRouter from "./routes/bidRoutes.js";
-
+import commissionRouter from "./routes/commissionRouter.js"
+import superAdminRouter from "./routes/superAdminRoutes.js"
+import { endedAuctionCron } from "./automation/endedAuctionCron.js";
+import {verifyCommissionCron} from "./automation/verifyCommissionCron.js"
 const app = express();
 
 // Cloudinary Configuration
@@ -44,12 +47,21 @@ app.use(
     tempFileDir: "/tmp/", // Temporary directory for file uploads
   })
 );
-
+app.use(cors({
+  origin: "http://localhost:5173", // Allow only your frontend domain
+  methods: ["GET", "POST", "PUT", "DELETE"], // Specify the allowed methods
+  credentials: true, // Allow cookies (if you're using withCredentials)
+}));
 // Define Routes
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/auctionitem", router);
 app.use("/api/v1/bid", bidRouter);
+app.use("/api/v1/commission",commissionRouter );
+app.use("/api/v1/superAdmin",superAdminRouter)
 
+
+endedAuctionCron()
+verifyCommissionCron()
 // Connect to Database
 connection();
 
